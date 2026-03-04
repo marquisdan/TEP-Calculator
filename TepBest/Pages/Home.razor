@@ -1,0 +1,288 @@
+@page "/"
+
+@using System.Linq
+<PageTitle>TEP Calculator</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="pa-3 pt-6">
+
+    <MudText Typo="Typo.h6" Align="Align.Center" Class="mb-1"
+             Style="letter-spacing: 0.25em; font-weight: 800; text-transform: uppercase;">
+        ⚔ TEP Calculator ⚔
+    </MudText>
+    <MudDivider Class="mb-5" />
+
+    <MudGrid Justify="Justify.Center" Spacing="3">
+
+        <MudItem xs="6" Class="d-flex flex-column align-center">
+            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">RAT</MudText>
+            <MudNumericField @bind-Value="rat"
+                             @bind-Value:after="Recalculate"
+                             Variant="Variant.Outlined"
+                             Class="square-input"
+                             HideSpinButtons="true"
+                             Min="0" Max="99" />
+        </MudItem>
+
+        <MudItem xs="6" Class="d-flex flex-column align-center">
+            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">POW</MudText>
+            <MudNumericField @bind-Value="pow"
+                             @bind-Value:after="Recalculate"
+                             Variant="Variant.Outlined"
+                             Class="square-input"
+                             HideSpinButtons="true"
+                             Min="0" Max="99" />
+        </MudItem>
+
+        <MudItem xs="6" Class="d-flex flex-column align-center">
+            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">TARGET DEF</MudText>
+            <MudNumericField @bind-Value="targetDef"
+                             @bind-Value:after="Recalculate"
+                             Variant="Variant.Outlined"
+                             Class="square-input"
+                             HideSpinButtons="true"
+                             Min="0" Max="99" />
+        </MudItem>
+
+        <MudItem xs="6" Class="d-flex flex-column align-center">
+            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">TARGET ARM</MudText>
+            <MudNumericField @bind-Value="targetArm"
+                             @bind-Value:after="Recalculate"
+                             Variant="Variant.Outlined"
+                             Class="square-input"
+                             HideSpinButtons="true"
+                             Min="0" Max="99" />
+        </MudItem>
+
+    </MudGrid>
+
+    <MudDivider Class="mt-5 mb-4" />
+
+    @if (best is not null)
+    {
+        <MudText Typo="Typo.overline" Color="Color.Secondary" Align="Align.Center" Class="mb-2">
+            Best Allocation
+        </MudText>
+
+        <MudPaper Elevation="4" Class="pa-4 mb-5 result-card result-card-total">
+            <MudGrid Justify="Justify.Center" Spacing="1">
+                <MudItem xs="4" Class="d-flex flex-column align-center">
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">ATK DICE</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight:800">@best.AttackDice</MudText>
+                </MudItem>
+                <MudItem xs="4" Class="d-flex flex-column align-center">
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">DMG DICE</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight:800">@best.DamageDice</MudText>
+                </MudItem>
+                <MudItem xs="4" Class="d-flex flex-column align-center">
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">ATTACKS</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight:800">@best.Attacks</MudText>
+                </MudItem>
+                <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">HIT</MudText>
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">CHANCE</MudText>
+                    <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@best.HitChance.ToString("P0")</MudText>
+                </MudItem>
+                <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">EXPECTED</MudText>
+                    <div class="d-flex align-center gap-1">
+                        <MudText Typo="Typo.overline" Color="Color.Secondary">TOTAL</MudText>
+                        <MudTooltip Text="Expected Total = Number of Attacks × Chance to Hit × Average Damage per Hit"
+                                    Placement="Placement.Top" Arrow="true">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                        </MudTooltip>
+                    </div>
+                    <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@best.ExpectedTotalDamage.ToString("F1")</MudText>
+                </MudItem>
+                <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">IF ALL</MudText>
+                    <div class="d-flex align-center gap-1">
+                        <MudText Typo="Typo.overline" Color="Color.Secondary">HIT</MudText>
+                        <MudTooltip Text="If All Hit = Number of Attacks × Average Damage per Hit (assumes every attack lands)"
+                                    Placement="Placement.Top" Arrow="true">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                        </MudTooltip>
+                    </div>
+                    <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@best.AllHitDamage.ToString("F1")</MudText>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudText Typo="Typo.overline" Color="Color.Secondary" Align="Align.Center" Class="mb-2">
+            All Allocations
+        </MudText>
+
+        <MudExpansionPanels Class="mb-3 sort-accordion" Elevation="0">
+            <MudExpansionPanel Text="Sort Options" Dense="true" DisableGutters="true">
+                <div class="d-flex flex-column gap-2 pt-2">
+                    <div class="d-flex align-center gap-2">
+                        <MudText Typo="Typo.overline" Color="Color.Secondary" Style="white-space:nowrap;width:70px">Filter By:</MudText>
+                        <MudSelect @bind-Value="sort1" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                   Class="sort-select" T="string">
+                            @foreach (var opt in Sort1Options)
+                            {
+                                <MudSelectItem Value="@opt">@opt</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+                    <div class="d-flex align-center gap-2">
+                        <MudText Typo="Typo.overline" Color="Color.Secondary" Style="white-space:nowrap;width:70px">Then:</MudText>
+                        <MudSelect @bind-Value="sort2" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                   Class="sort-select" T="string">
+                            @foreach (var opt in Sort2Options)
+                            {
+                                <MudSelectItem Value="@opt">@opt</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" Class="mb-2"
+                               FullWidth="true" OnClick="ResetSort">Set Default</MudButton>
+                </div>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+
+        <MudSimpleTable Dense="true" Hover="true" Class="alloc-table">
+            <thead>
+                <tr>
+                    <th>ATK</th>
+                    <th>DMG</th>
+                    <th>#ATK</th>
+                    <th>HIT%</th>
+                    <th>TOTAL</th>
+                    <th>ALL HIT</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in SortedAllocations)
+                {
+                    <tr class="@(a == best ? "best-row" : "")">
+                        <td>@a.AttackDice</td>
+                        <td>@a.DamageDice</td>
+                        <td>@a.Attacks</td>
+                        <td>@a.HitChance.ToString("P0")</td>
+                        <td>@a.ExpectedTotalDamage.ToString("F1")</td>
+                        <td>@a.AllHitDamage.ToString("F1")</td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+
+</MudContainer>
+
+@code {
+    private int rat = 5;
+    private int pow = 11;
+    private int targetDef = 10;
+    private int targetArm = 18;
+
+    private List<BuffAllocation> allocations = new();
+    private BuffAllocation? best;
+
+    private static readonly string[] Sort1Options = SortColumns.Sort1Options;
+    private static readonly string[] Sort2Options = SortColumns.Sort2Options;
+
+    private string sort1 = SortColumns.AvgDmg;
+    private string sort2 = SortColumns.None;
+
+    private IEnumerable<BuffAllocation> SortedAllocations
+    {
+        get
+        {
+            var ordered = allocations.OrderByDescending(SortKey(sort1));
+            return sort2 != SortColumns.None
+                ? ordered.ThenByDescending(SortKey(sort2))
+                : ordered;
+        }
+    }
+
+    private static Func<BuffAllocation, double> SortKey(string col) => col switch
+    {
+        var c when c == SortColumns.AttackDice => a => a.AttackDice,
+        var c when c == SortColumns.DamageDice => a => a.DamageDice,
+        var c when c == SortColumns.NumAttacks => a => a.Attacks,
+        var c when c == SortColumns.HitChance  => a => Math.Round(a.HitChance * 100),        // rounds to nearest 1% — matches P0 display
+        var c when c == SortColumns.AvgDmg     => a => Math.Round(a.ExpectedTotalDamage, 1), // matches F1 display
+        var c when c == SortColumns.IfAllHit   => a => Math.Round(a.AllHitDamage, 1),        // matches F1 display
+        _                                      => a => 0
+    };
+
+    private void ResetSort() { sort1 = SortColumns.AvgDmg; sort2 = SortColumns.None; }
+
+    protected override void OnInitialized() => Recalculate();
+
+    private record BuffAllocation(
+        int AttackBuff, int DamageBuff, int AttacksBuff,
+        double HitChance, double ExpectedDamagePerHit, double ExpectedTotalDamage, double AllHitDamage)
+    {
+        public int AttackDice => 2 + AttackBuff;
+        public int DamageDice => 2 + DamageBuff;
+        public int Attacks    => 2 + AttacksBuff;
+    }
+
+    private void Recalculate()
+    {
+        allocations.Clear();
+
+        for (int a = 0; a <= 3; a++)
+        for (int b = 0; b <= 3 - a; b++)
+        {
+            int c = 3 - a - b;
+
+            double hitChance  = HitProbability(2 + a, targetDef - rat);
+            double dmgPerHit  = ExpectedDamagePerHit(2 + b, pow - targetArm);
+            double total      = (2 + c) * hitChance * dmgPerHit;
+            double allHit     = (2 + c) * dmgPerHit;
+
+            allocations.Add(new BuffAllocation(a, b, c, hitChance, dmgPerHit, total, allHit));
+        }
+
+        allocations = allocations.OrderByDescending(x => x.ExpectedTotalDamage).ToList();
+        best = allocations.FirstOrDefault();
+    }
+
+    // P(sum of nDice d6 >= threshold)
+    private static double HitProbability(int nDice, int threshold)
+    {
+        if (threshold <= nDice)     return 1.0;
+        if (threshold > 6 * nDice) return 0.0;
+
+        double[] pmf = DicePmf(nDice);
+        double prob = 0;
+        for (int s = threshold; s < pmf.Length; s++)
+            prob += pmf[s];
+        return prob;
+    }
+
+    // E[max(sum of nDice d6 + bonus, 0)]
+    private static double ExpectedDamagePerHit(int nDice, int bonus)
+    {
+        double[] pmf = DicePmf(nDice);
+        double expected = 0;
+        for (int s = 0; s < pmf.Length; s++)
+            expected += pmf[s] * Math.Max(s + bonus, 0);
+        return expected;
+    }
+
+    // Returns PMF array where index = dice sum, value = probability
+    private static double[] DicePmf(int nDice)
+    {
+        double[] pmf = new double[7];
+        for (int f = 1; f <= 6; f++)
+            pmf[f] = 1.0 / 6.0;
+
+        for (int d = 2; d <= nDice; d++)
+        {
+            double[] next = new double[6 * d + 1];
+            for (int s = 0; s < pmf.Length; s++)
+            {
+                if (pmf[s] == 0) continue;
+                for (int f = 1; f <= 6; f++)
+                    next[s + f] += pmf[s] * (1.0 / 6.0);
+            }
+            pmf = next;
+        }
+        return pmf;
+    }
+}
+
+

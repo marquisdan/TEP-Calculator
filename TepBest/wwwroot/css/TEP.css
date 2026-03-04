@@ -1,0 +1,129 @@
+/* =============================================
+   Square numeric inputs
+   Note: MudBlazor sets width:100% as an inline
+   style on the host element, so !important is
+   required to constrain the width via CSS.
+   ============================================= */
+
+.square-input {
+    width: 88px !important;
+    min-width: 88px !important;
+    max-width: 88px !important;
+}
+
+.square-input .mud-input-control,
+.square-input .mud-input-control-input-container,
+.square-input .mud-input-root,
+.square-input .mud-input-outlined {
+    width: 88px !important;
+    min-width: 88px !important;
+    max-width: 88px !important;
+}
+
+.square-input .mud-input-root,
+.square-input .mud-input-outlined {
+    height: 88px !important;
+    padding: 0 !important;
+}
+
+.square-input input {
+    text-align: center !important;
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    padding: 0 !important;
+    width: 88px !important;
+    height: 88px !important;
+}
+
+/* Hide spin buttons */
+.square-input input[type=number]::-webkit-inner-spin-button,
+.square-input input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.square-input input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* Hide floating label and helper text gap */
+.square-input .mud-input-label,
+.square-input .mud-input-helper-text {
+    display: none !important;
+}
+
+.square-input .mud-input-control {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* =============================================
+   Result cards
+   ============================================= */
+
+.result-card {
+    border-radius: 12px;
+}
+
+.result-card-total {
+    background: rgba(var(--mud-palette-primary-rgb), 0.12) !important;
+    border: 1px solid var(--mud-palette-primary);
+}
+
+/* Tighten the gap between the two overline label lines */
+.result-card-total .mud-typography-overline {
+    line-height: 1.1;
+    margin-bottom: 0;
+}
+
+/* Allocation table */
+.alloc-table th {
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-secondary);
+    text-align: center !important;
+}
+
+.alloc-table td {
+    text-align: center !important;
+    font-size: 0.85rem;
+}
+
+/* Highlight the best allocation row */
+.best-row td {
+    color: var(--mud-palette-primary) !important;
+    font-weight: 800 !important;
+}
+
+/* Sort accordion — style the header as an interactive control */
+.sort-accordion .mud-expand-panel {
+    border: 1px solid var(--mud-palette-primary) !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+}
+
+.sort-accordion .mud-expand-panel-header {
+    background: rgba(var(--mud-palette-primary-rgb), 0.1);
+    border-radius: 8px;
+    color: var(--mud-palette-primary) !important;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.sort-accordion .mud-expand-panel-header:hover {
+    background: rgba(var(--mud-palette-primary-rgb), 0.2);
+}
+
+.sort-accordion .mud-expand-panel-header .mud-expand-icon {
+    color: var(--mud-palette-primary) !important;
+}
+
+/* Sort selects */
+.sort-select {
+    width: 150px !important;
+    min-width: 150px !important;
+}

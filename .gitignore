@@ -1,0 +1,38 @@
+# Build outputs
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/launch.json
+
+# NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+packages/
+.nuget/
+
+# Publish output
+publish/
+**/publish/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Blazor WASM specific
+**/wwwroot/_framework/
