@@ -35,13 +35,40 @@ TEP Calculator evaluates all 10 valid allocations (every combination of a+b+c=3)
 
 ### Math
 
-Probabilities are computed using **exact PMF convolution** — no simulation, no approximation. The probability mass function of rolling N d6s is built iteratively, giving precise hit chance and expected damage values for any dice count.
+Probabilities are computed using **exact PMF convolution** — no simulation, no approximation.
 
-Expected Total Damage is calculated as:
+#### Warmachine Special Rules
+
+- **Snake eyes (all 1s) always miss**, regardless of RAT vs DEF.
+- **Boxcars (all 6s) always hit**, regardless of RAT vs DEF.
+
+Both rules are applied before any other probability calculation. Even if the target is so easy that any roll would normally hit, rolling all 1s still misses. Even if the target is so hard that no normal roll could reach, rolling all 6s still hits.
+
+#### How the Probability Engine Works
+
+**Step 1 — Build a dice probability table (`DicePmf`)**
+
+A lookup table is built where each entry holds the probability of rolling exactly that total on N dice.
+
+1. Start with one die: each face (1–6) has a 1-in-6 chance.
+2. For each additional die, *convolve* — spread every existing probability across all six new face values. This is the mathematically exact way to combine independent dice.
+3. The result is a complete probability distribution covering every possible sum from N (all ones) to 6N (all sixes).
+
+**Step 2 — Calculate hit chance (`HitProbability`)**
+
+In Warmachine, an attack hits if `RAT + roll ≥ DEF`, so the required roll is `DEF − RAT`. The hit probability is the sum of all table entries at or above that threshold, with special-case handling:
+
+- If the target is so easy that even all-1s would normally hit → `P(hit) = 1 − P(all ones)`
+- If the target is so hard that even all-6s can't reach it → `P(hit) = P(all sixes)`
+- Otherwise → sum the PMF table from the threshold upward
+
+**Step 3 — Calculate expected damage per hit (`ExpectedDamagePerHit`)**
+
+For every possible damage roll total, multiply its probability by `max(roll + POW − ARM, 0)`. The `max(..., 0)` floor means a roll can never deal negative damage. Summing all of these gives the true average damage on a hit.
+
+**Step 4 — Expected Total Damage**
 
 $$\text{Expected Total} = \text{Attacks} \times P(\text{hit}) \times E[\text{damage} \mid \text{hit}]$$
-
-Damage is floored at 0 (a roll can never deal negative damage).
 
 ## Tech Stack
 

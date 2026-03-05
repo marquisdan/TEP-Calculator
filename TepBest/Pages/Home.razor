@@ -79,8 +79,14 @@
                 </MudItem>
                 <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
                     <MudText Typo="Typo.overline" Color="Color.Secondary">HIT</MudText>
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">CHANCE</MudText>
-                    <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@best.HitChance.ToString("P0")</MudText>
+                    <div class="d-flex align-center gap-1">
+                        <MudText Typo="Typo.overline" Color="Color.Secondary">CHANCE</MudText>
+                        <MudTooltip Text="Probability of hitting the target, rounded to the nearest 0.1%. Snake eyes (all 1s) always miss; boxcars (all 6s) always hit."
+                                    Placement="Placement.Top" Arrow="true">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                        </MudTooltip>
+                    </div>
+                    <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@FormatHitChance(best.HitChance)</MudText>
                 </MudItem>
                 <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
                     <MudText Typo="Typo.overline" Color="Color.Secondary">EXPECTED</MudText>
@@ -158,7 +164,7 @@
                         <td>@a.AttackDice</td>
                         <td>@a.DamageDice</td>
                         <td>@a.Attacks</td>
-                        <td>@a.HitChance.ToString("P0")</td>
+                        <td>@FormatHitChance(a.HitChance)</td>
                         <td>@a.ExpectedTotalDamage.ToString("F1")</td>
                         <td>@a.AllHitDamage.ToString("F1")</td>
                     </tr>
@@ -209,13 +215,20 @@
         var c when c == SortColumns.AttackDice => a => a.AttackDice,
         var c when c == SortColumns.DamageDice => a => a.DamageDice,
         var c when c == SortColumns.NumAttacks => a => a.Attacks,
-        var c when c == SortColumns.HitChance  => a => Math.Round(a.HitChance * 100),        // rounds to nearest 1% — matches P0 display
+        var c when c == SortColumns.HitChance  => a => Math.Round(a.HitChance * 100, 1),     // rounds to nearest 0.1% — matches P1 display
         var c when c == SortColumns.AvgDmg     => a => Math.Round(a.ExpectedTotalDamage, 1), // matches F1 display
         var c when c == SortColumns.IfAllHit   => a => Math.Round(a.AllHitDamage, 1),        // matches F1 display
         _                                      => a => 0
     };
 
     private void ResetSort() { sort1 = SortColumns.AvgDmg; sort2 = SortColumns.None; }
+
+    private static string FormatHitChance(double chance)
+    {
+        if (chance >= 0.9995) return ">99.9%";
+        if (chance <= 0.0005) return "<0.1%";
+        return chance.ToString("P1");
+    }
 
     protected override void OnInitialized() => Recalculate();
 
@@ -249,12 +262,22 @@
         best = allocations.FirstOrDefault();
     }
 
-    // P(sum of nDice d6 >= threshold)
+    // P(sum of nDice d6 >= threshold), with Warmachine special rules:
+    //   All 1s always miss (snake eyes), all 6s always hit (boxcars)
     private static double HitProbability(int nDice, int threshold)
     {
-        if (threshold <= nDice)     return 1.0;
-        if (threshold > 6 * nDice) return 0.0;
+        double allOnes  = Math.Pow(1.0 / 6.0, nDice); // P(rolling all 1s) — always miss
+        double allSixes = Math.Pow(1.0 / 6.0, nDice); // P(rolling all 6s) — always hit
 
+        // Even all-6s can't reach threshold — only boxcars save it
+        if (threshold > 6 * nDice) return allSixes;
+
+        // Even all-1s would meet threshold — everything hits except snake eyes
+        if (threshold <= nDice) return 1.0 - allOnes;
+
+        // Normal range: PMF is already correct here because:
+        //   all-1s sum = nDice < threshold  → not counted in prob ✓
+        //   all-6s sum = 6*nDice >= threshold → counted in prob ✓
         double[] pmf = DicePmf(nDice);
         double prob = 0;
         for (int s = threshold; s < pmf.Length; s++)
