@@ -13,7 +13,14 @@
         </MudText>
         <img src="favicon-32.png" class="tep-title-icon" alt="Convergence of Cyriss logo" />
     </div>
-    <MudDivider Class="mb-5" />
+    <MudDivider Class="mb-2" />
+
+    <div class="d-flex justify-end align-center mb-3">
+        <MudSwitch @bind-Value="multiTargetMode"
+                   @bind-Value:after="OnModeSwitched"
+                   Color="Color.Primary"
+                   Label="Multi-Target" />
+    </div>
 
     <MudGrid Spacing="16">
 
@@ -42,27 +49,43 @@
                                      Min="0" Max="99" />
                 </MudItem>
 
-                <MudItem xs="6" Class="d-flex flex-column align-center">
-                    <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">TARGET DEF</MudText>
-                    <MudNumericField @bind-Value="targetDef"
-                                     @bind-Value:after="Recalculate"
-                                     Variant="Variant.Outlined"
-                                     Class="square-input"
-                                     HideSpinButtons="true"
-                                     Min="0" Max="99" />
-                </MudItem>
-
-                <MudItem xs="6" Class="d-flex flex-column align-center">
-                    <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">TARGET ARM</MudText>
-                    <MudNumericField @bind-Value="targetArm"
-                                     @bind-Value:after="Recalculate"
-                                     Variant="Variant.Outlined"
-                                     Class="square-input"
-                                     HideSpinButtons="true"
-                                     Min="0" Max="99" />
-                </MudItem>
+                @if (!multiTargetMode)
+                {
+                    @* Single-target: TargetRow renders as three MudItems inside this MudGrid *@
+                    <TargetRow Target="targets[0]"
+                               Index="0"
+                               MultiTargetMode="false"
+                               ShowRemove="false"
+                               OnChanged="EventCallback.Factory.Create(this, Recalculate)" />
+                }
 
             </MudGrid>
+
+            @* Multi-target controls + target cards *@
+            @if (multiTargetMode)
+            {
+                <div class="d-flex gap-2 mt-3 mb-2">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               Disabled="targets.Count >= MaxTargets"
+                               OnClick="AddTarget">Add Target</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.RestartAlt"
+                               OnClick="ResetTargets">Reset</MudButton>
+                </div>
+
+                @for (int i = 0; i < targets.Count; i++)
+                {
+                    var idx = i;
+                    <TargetRow @key="idx"
+                               Target="targets[idx]"
+                               Index="idx"
+                               MultiTargetMode="true"
+                               ShowRemove="targets.Count > 1"
+                               OnChanged="EventCallback.Factory.Create(this, Recalculate)"
+                               OnRemove="EventCallback.Factory.Create(this, () => RemoveTarget(idx))" />
+                }
+            }
 
             @if (best is not null)
             {
@@ -86,38 +109,60 @@
                             <MudText Typo="Typo.overline" Color="Color.Secondary">ATTACKS</MudText>
                             <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight:800">@best.Attacks</MudText>
                         </MudItem>
-                        <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
+
+                        <MudItem xs="3" Class="d-flex flex-column align-center mt-2">
                             <MudText Typo="Typo.overline" Color="Color.Secondary">HIT</MudText>
                             <div class="d-flex align-center gap-1">
-                                <MudText Typo="Typo.overline" Color="Color.Secondary">CHANCE</MudText>
-                                <MudTooltip Text="Probability of hitting the target, rounded to the nearest 0.1%. Snake eyes (all 1s) always miss; boxcars (all 6s) always hit."
+                                <MudText Typo="Typo.overline" Color="Color.Secondary">
+                                    @(multiTargetMode ? $"vs. {TargetLabel(0)}" : "CHANCE")
+                                </MudText>
+                                <MudTooltip Text="@(multiTargetMode
+                                    ? $"Hit probability against {TargetLabel(0)} (first target). Each target uses independent rolls."
+                                    : "Probability of hitting the target, rounded to the nearest 0.1%. Snake eyes (all 1s) always miss; boxcars (all 6s) always hit.")"
                                             Placement="Placement.Top" Arrow="true">
                                     <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
                                 </MudTooltip>
                             </div>
-                            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@FormatHitChance(best.HitChance)</MudText>
+                            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@FormatHitChance(best.PerTarget[0].Hit)</MudText>
                         </MudItem>
-                        <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">EXPECTED</MudText>
+
+                        <MudItem xs="3" Class="d-flex flex-column align-center mt-2">
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(multiTargetMode ? "AGGREGATE" : "EXPECTED")</MudText>
                             <div class="d-flex align-center gap-1">
                                 <MudText Typo="Typo.overline" Color="Color.Secondary">TOTAL</MudText>
-                                <MudTooltip Text="Expected Total = Number of Attacks × Chance to Hit × Average Damage per Hit"
+                                <MudTooltip Text="@(multiTargetMode
+                                    ? "Sum of expected damage across all targets in the line. Each target uses independent rolls with the same buff dice."
+                                    : "Expected Total = Number of Attacks × Chance to Hit × Average Damage per Hit")"
                                             Placement="Placement.Top" Arrow="true">
                                     <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
                                 </MudTooltip>
                             </div>
                             <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@best.ExpectedTotalDamage.ToString("F1")</MudText>
                         </MudItem>
-                        <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">IF ALL</MudText>
+
+                        <MudItem xs="3" Class="d-flex flex-column align-center mt-2">
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(multiTargetMode ? "AVG DMG" : "IF ALL")</MudText>
                             <div class="d-flex align-center gap-1">
-                                <MudText Typo="Typo.overline" Color="Color.Secondary">HIT</MudText>
-                                <MudTooltip Text="If All Hit = Number of Attacks × Average Damage per Hit (assumes every attack lands)"
+                                <MudText Typo="Typo.overline" Color="Color.Secondary">@(multiTargetMode ? "EACH" : "HIT")</MudText>
+                                <MudTooltip Text="@(multiTargetMode
+                                    ? "Average all-hit damage per target = total all-hit damage ÷ number of targets (assumes every attack on every target lands)."
+                                    : "If All Hit = Number of Attacks × Average Damage per Hit (assumes every attack lands)")"
                                             Placement="Placement.Top" Arrow="true">
                                     <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
                                 </MudTooltip>
                             </div>
-                            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@best.AllHitDamage.ToString("F1")</MudText>
+                            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@(multiTargetMode ? (best.AllHitDamage / targets.Count).ToString("F1") : best.AllHitDamage.ToString("F1"))</MudText>
+                        </MudItem>
+
+                        <MudItem xs="3" Class="d-flex flex-column align-center mt-2">
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(multiTargetMode ? "EXP" : "KILL")</MudText>
+                            <div class="d-flex align-center gap-1">
+                                <MudText Typo="Typo.overline" Color="Color.Secondary">@(multiTargetMode ? "KILLS" : "CHANCE")</MudText>
+                                <MudTooltip Text="@KillTooltip" Placement="Placement.Top" Arrow="true">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                                </MudTooltip>
+                            </div>
+                            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@FormatExpectedKills(best.ExpectedKills)</MudText>
                         </MudItem>
                     </MudGrid>
                 </MudPaper>
@@ -170,21 +215,78 @@
                             <th>DMG</th>
                             <th>#ATK</th>
                             <th>HIT%</th>
-                            <th>TOTAL</th>
-                            <th>ALL HIT</th>
+                            <th>@(multiTargetMode ? "AGGREGATE" : "TOTAL")</th>
+                            <th>@(multiTargetMode ? "AVG EACH" : "ALL HIT")</th>
+                            <th>
+                                <div class="d-flex align-center justify-center gap-1">
+                                    @(multiTargetMode ? "EXP KILLS" : "KILL%")
+                                    <MudTooltip Text="@KillTooltip" Placement="Placement.Top" Arrow="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                                    </MudTooltip>
+                                </div>
+                            </th>
+                            @if (multiTargetMode)
+                            {
+                                <th></th>
+                            }
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var a in SortedAllocations)
                         {
+                            var isExpanded = expandedRows.Contains(a);
                             <tr class="@(a == best ? "best-row" : "")">
                                 <td>@a.AttackDice</td>
                                 <td>@a.DamageDice</td>
                                 <td>@a.Attacks</td>
-                                <td>@FormatHitChance(a.HitChance)</td>
+                                <td>@FormatHitChance(a.PerTarget[0].Hit)</td>
                                 <td>@a.ExpectedTotalDamage.ToString("F1")</td>
-                                <td>@a.AllHitDamage.ToString("F1")</td>
+                                <td>@(multiTargetMode ? (a.AllHitDamage / targets.Count).ToString("F1") : a.AllHitDamage.ToString("F1"))</td>
+                                <td>@FormatExpectedKills(a.ExpectedKills)</td>
+                                @if (multiTargetMode)
+                                {
+                                    <td>
+                                        <MudIconButton Icon="@(isExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                                                       Size="Size.Small"
+                                                       OnClick="() => ToggleExpand(a)" />
+                                    </td>
+                                }
                             </tr>
+                            @if (multiTargetMode && isExpanded)
+                            {
+                                <tr class="expand-row">
+                                    <td colspan="8">
+                                        <table class="expand-detail-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>TARGET</th>
+                                                    <th>HIT%</th>
+                                                    <th>EXPECTED</th>
+                                                    <th>ALL HIT</th>
+                                                    <th>KILL%</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @for (int ti = 0; ti < targets.Count; ti++)
+                                                {
+                                                    var pt  = a.PerTarget[ti];
+                                                    var tgt = targets[ti];
+                                                    <tr>
+                                                        <td>
+                                                            @(string.IsNullOrWhiteSpace(tgt.Label) ? $"Target {ti + 1}" : tgt.Label)
+                                                            @if (tgt.IsPriority) { <span class="priority-star">★</span> }
+                                                        </td>
+                                                        <td>@FormatHitChance(pt.Hit)</td>
+                                                        <td>@pt.Expected.ToString("F1")</td>
+                                                        <td>@pt.AllHit.ToString("F1")</td>
+                                                        <td>@FormatHitChance(pt.Kill)</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            }
                         }
                     </tbody>
                 </MudSimpleTable>
@@ -206,19 +308,47 @@
 </MudContainer>
 
 @code {
+    private const int MaxTargets = 10;
+
     private int rat = 5;
     private int pow = 11;
-    private int targetDef = 10;
-    private int targetArm = 18;
+
+    private List<Target> targets = [new Target()];
+    private bool multiTargetMode = false;
 
     private List<BuffAllocation> allocations = new();
     private BuffAllocation? best;
+    private HashSet<BuffAllocation> expandedRows = new();
 
     private static readonly string[] Sort1Options = SortColumns.Sort1Options;
     private static readonly string[] Sort2Options = SortColumns.Sort2Options;
 
     private string sort1 = SortColumns.AvgDmg;
     private string sort2 = SortColumns.None;
+
+    // ── Display helpers ──────────────────────────────────────────────────────
+
+    private string TargetLabel(int i)
+    {
+        var t = targets[i];
+        return string.IsNullOrWhiteSpace(t.Label) ? $"Target {i + 1}" : t.Label;
+    }
+
+    private string KillTooltip => multiTargetMode
+        ? "Expected number of kills = sum of each target's individual kill probability. Independent rolls mean this can exceed 1 (e.g. 1.8 means you expect to kill nearly 2 targets)."
+        : "Exact probability your total damage equals or exceeds the target's remaining boxes, accounting for hit probability and damage variability across all attacks.";
+
+    private string FormatExpectedKills(double v) =>
+        multiTargetMode ? v.ToString("F2") : FormatHitChance(v);
+
+    private static string FormatHitChance(double chance)
+    {
+        if (chance >= 0.9995) return ">99.9%";
+        if (chance <= 0.0005) return "<0.1%";
+        return chance.ToString("P1");
+    }
+
+    // ── Sort ─────────────────────────────────────────────────────────────────
 
     private IEnumerable<BuffAllocation> SortedAllocations
     {
@@ -231,74 +361,220 @@
         }
     }
 
-    private static Func<BuffAllocation, double> SortKey(string col) => col switch
+    private Func<BuffAllocation, double> SortKey(string col) => col switch
     {
         var c when c == SortColumns.AttackDice => a => a.AttackDice,
         var c when c == SortColumns.DamageDice => a => a.DamageDice,
         var c when c == SortColumns.NumAttacks => a => a.Attacks,
-        var c when c == SortColumns.HitChance  => a => Math.Round(a.HitChance * 100, 1),     // rounds to nearest 0.1% — matches P1 display
-        var c when c == SortColumns.AvgDmg     => a => Math.Round(a.ExpectedTotalDamage, 1), // matches F1 display
-        var c when c == SortColumns.IfAllHit   => a => Math.Round(a.AllHitDamage, 1),        // matches F1 display
+        var c when c == SortColumns.HitChance  => a => Math.Round(a.PerTarget[0].Hit * 100, 1),
+        var c when c == SortColumns.AvgDmg     => a => Math.Round(a.ExpectedTotalDamage, 1),
+        var c when c == SortColumns.IfAllHit   => a => Math.Round(multiTargetMode ? a.AllHitDamage / targets.Count : a.AllHitDamage, 1),
+        var c when c == SortColumns.KillChance => a => Math.Round(a.ExpectedKills, 4),
         _                                      => a => 0
     };
 
     private void ResetSort() { sort1 = SortColumns.AvgDmg; sort2 = SortColumns.None; }
 
-    private static string FormatHitChance(double chance)
+    // ── Target management ────────────────────────────────────────────────────
+
+    private void AddTarget()
     {
-        if (chance >= 0.9995) return ">99.9%";
-        if (chance <= 0.0005) return "<0.1%";
-        return chance.ToString("P1");
+        if (targets.Count < MaxTargets)
+        {
+            targets.Add(new Target());
+            Recalculate();
+        }
     }
 
-    protected override void OnInitialized() => Recalculate();
+    private void RemoveTarget(int i)
+    {
+        if (targets.Count > 1)
+        {
+            targets.RemoveAt(i);
+            Recalculate();
+        }
+    }
+
+    private void ResetTargets()
+    {
+        targets = [new Target()];
+        expandedRows.Clear();
+        Recalculate();
+    }
+
+    private void OnModeSwitched() => ResetTargets();
+
+    private void ToggleExpand(BuffAllocation a)
+    {
+        if (!expandedRows.Remove(a)) expandedRows.Add(a);
+    }
+
+    // ── Data model ───────────────────────────────────────────────────────────
+
+    private record PerTargetStats(double Hit, double Expected, double AllHit, double Kill);
 
     private record BuffAllocation(
         int AttackBuff, int DamageBuff, int AttacksBuff,
-        double HitChance, double ExpectedDamagePerHit, double ExpectedTotalDamage, double AllHitDamage)
+        IReadOnlyList<PerTargetStats> PerTarget,
+        double ExpectedTotalDamage, double AllHitDamage, double ExpectedKills)
     {
         public int AttackDice => 2 + AttackBuff;
         public int DamageDice => 2 + DamageBuff;
         public int Attacks    => 2 + AttacksBuff;
     }
 
+    // ── Recalculate ──────────────────────────────────────────────────────────
+
+    protected override void OnInitialized() => Recalculate();
+
     private void Recalculate()
     {
         allocations.Clear();
+        expandedRows.Clear();
 
         for (int a = 0; a <= 3; a++)
-        for (int b = 0; b <= 3 - a; b++)
+        for (int d = 0; d <= 3 - a; d++)
         {
-            int c = 3 - a - b;
+            int c          = 3 - a - d;
+            int attackDice = 2 + a;
+            int damageDice = 2 + d;
+            int numAttacks = 2 + c;
 
-            double hitChance  = HitProbability(2 + a, targetDef - rat);
-            double dmgPerHit  = ExpectedDamagePerHit(2 + b, pow - targetArm);
-            double total      = (2 + c) * hitChance * dmgPerHit;
-            double allHit     = (2 + c) * dmgPerHit;
+            var perTarget  = new List<PerTargetStats>(targets.Count);
+            double aggExpected = 0, aggAllHit = 0, expKills = 0;
 
-            allocations.Add(new BuffAllocation(a, b, c, hitChance, dmgPerHit, total, allHit));
+            foreach (var t in targets)
+            {
+                double hit      = HitProbability(attackDice, t.Def - rat);
+                double dmgPH    = ExpectedDamagePerHit(damageDice, pow - t.Arm);
+                double expected = numAttacks * hit * dmgPH;
+                double allHit   = numAttacks * dmgPH;
+                double kill     = ChanceToKill(attackDice, damageDice, numAttacks, t.Def - rat, pow - t.Arm, t.Boxes);
+
+                perTarget.Add(new PerTargetStats(hit, expected, allHit, kill));
+                aggExpected += expected;
+                aggAllHit   += allHit;
+                expKills    += kill;
+            }
+
+            allocations.Add(new BuffAllocation(a, d, c, perTarget, aggExpected, aggAllHit, expKills));
         }
 
         allocations = allocations.OrderByDescending(x => x.ExpectedTotalDamage).ToList();
-        best = allocations.FirstOrDefault();
+        best = PickBest();
+    }
+
+    private BuffAllocation? PickBest()
+    {
+        if (allocations.Count == 0) return null;
+
+        var priorityTargets = targets
+            .Select((t, i) => (t, i))
+            .Where(x => x.t.IsPriority)
+            .ToList();
+
+        if (priorityTargets.Count > 0)
+        {
+            // Hard gate: every priority target must have expected_i >= boxes + 1
+            var gated = allocations
+                .Where(a => priorityTargets.All(p => a.PerTarget[p.i].Expected >= p.t.Boxes + 1))
+                .ToList();
+
+            if (gated.Count > 0)
+                return gated.OrderByDescending(a => a.ExpectedTotalDamage).First();
+
+            // Fallback: nothing clears the gate — pick highest aggregate
+            return allocations.OrderByDescending(a => a.ExpectedTotalDamage).First();
+        }
+
+        if (!multiTargetMode)
+        {
+            // Single-target, no priority: prefer hit chance if any allocation clears boxes threshold
+            var sufficient = allocations
+                .Where(a => a.ExpectedTotalDamage >= targets[0].Boxes + 1)
+                .ToList();
+
+            if (sufficient.Count > 0)
+                return sufficient
+                    .OrderByDescending(a => a.PerTarget[0].Hit)
+                    .ThenByDescending(a => a.ExpectedTotalDamage)
+                    .First();
+        }
+        else if (targets.Count == 1)
+        {
+            // Multi-target mode but only one target: use the same hit-chance preference
+            // so toggling modes doesn't change the recommendation on identical inputs.
+            var sufficient = allocations
+                .Where(a => a.ExpectedTotalDamage >= targets[0].Boxes + 1)
+                .ToList();
+
+            if (sufficient.Count > 0)
+                return sufficient
+                    .OrderByDescending(a => a.PerTarget[0].Hit)
+                    .ThenByDescending(a => a.ExpectedTotalDamage)
+                    .First();
+        }
+
+        return allocations.OrderByDescending(a => a.ExpectedTotalDamage).First();
+    }
+
+    // ── Math helpers ─────────────────────────────────────────────────────────
+
+    // P(total damage dealt >= boxes) across numAttacks independent attacks
+    private static double ChanceToKill(int attackDice, int damageDice, int numAttacks,
+                                       int defThreshold, int armBonus, int boxes)
+    {
+        double hitChance = HitProbability(attackDice, defThreshold);
+        double[] dicePmf = DicePmf(damageDice);
+
+        // Build single-attack damage PMF (0 = miss; otherwise clamped damage dice sum + armBonus)
+        int maxSingleDmg = dicePmf.Length - 1 + Math.Max(armBonus, 0);
+        double[] singlePmf = new double[Math.Max(maxSingleDmg + 1, 1)];
+        singlePmf[0] += 1.0 - hitChance; // miss contributes 0 damage
+
+        for (int s = 0; s < dicePmf.Length; s++)
+        {
+            if (dicePmf[s] == 0) continue;
+            int dmg = Math.Max(s + armBonus, 0);
+            if (dmg >= singlePmf.Length)
+            {
+                var expanded = new double[dmg + 1];
+                singlePmf.CopyTo(expanded, 0);
+                singlePmf = expanded;
+            }
+            singlePmf[dmg] += hitChance * dicePmf[s];
+        }
+
+        // Convolve numAttacks times to get total damage PMF
+        double[] totalPmf = [1.0];
+        for (int n = 0; n < numAttacks; n++)
+        {
+            double[] next = new double[totalPmf.Length + singlePmf.Length - 1];
+            for (int i = 0; i < totalPmf.Length; i++)
+            {
+                if (totalPmf[i] == 0) continue;
+                for (int j = 0; j < singlePmf.Length; j++)
+                    next[i + j] += totalPmf[i] * singlePmf[j];
+            }
+            totalPmf = next;
+        }
+
+        double prob = 0;
+        for (int k = boxes; k < totalPmf.Length; k++)
+            prob += totalPmf[k];
+        return Math.Min(prob, 1.0);
     }
 
     // P(sum of nDice d6 >= threshold), with Warmachine special rules:
     //   All 1s always miss (snake eyes), all 6s always hit (boxcars)
     private static double HitProbability(int nDice, int threshold)
     {
-        double allOnes  = Math.Pow(1.0 / 6.0, nDice); // P(rolling all 1s) — always miss
-        double allSixes = Math.Pow(1.0 / 6.0, nDice); // P(rolling all 6s) — always hit
+        double allOnes  = Math.Pow(1.0 / 6.0, nDice);
+        double allSixes = Math.Pow(1.0 / 6.0, nDice);
 
-        // Even all-6s can't reach threshold — only boxcars save it
         if (threshold > 6 * nDice) return allSixes;
+        if (threshold <= nDice)    return 1.0 - allOnes;
 
-        // Even all-1s would meet threshold — everything hits except snake eyes
-        if (threshold <= nDice) return 1.0 - allOnes;
-
-        // Normal range: PMF is already correct here because:
-        //   all-1s sum = nDice < threshold  → not counted in prob ✓
-        //   all-6s sum = 6*nDice >= threshold → counted in prob ✓
         double[] pmf = DicePmf(nDice);
         double prob = 0;
         for (int s = threshold; s < pmf.Length; s++)

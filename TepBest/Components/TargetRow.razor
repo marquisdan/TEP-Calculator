@@ -1,0 +1,115 @@
+@using TepBest.Models
+
+@if (MultiTargetMode)
+{
+    <MudPaper Elevation="2" Class="@CardClass">        
+        <div class="d-flex align-center justify-space-between mb-2">
+            <MudTextField @bind-Value="Target.Label"
+                          Placeholder="@($"Target {Index + 1}")"
+                          Variant="Variant.Text"
+                          Margin="Margin.Dense"
+                          Class="target-label-field"
+                          DebounceInterval="300"
+                          OnDebounceIntervalElapsed="Changed" />
+            <div class="d-flex align-center gap-1">
+                <MudTooltip Text="Priority targets must meet the expected damage threshold before any allocation is considered best. If no allocation qualifies, best is chosen by highest aggregate damage."
+                            Placement="Placement.Top" Arrow="true">
+                    <MudIconButton Icon="@(Target.IsPriority ? Icons.Material.Filled.Star : Icons.Material.Outlined.StarBorder)"
+                                   Color="@(Target.IsPriority ? Color.Warning : Color.Default)"
+                                   Size="Size.Small"
+                                   OnClick="TogglePriority" />
+                </MudTooltip>
+                @if (ShowRemove)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   OnClick="() => OnRemove.InvokeAsync()" />
+                }
+            </div>
+        </div>
+
+        <MudGrid Justify="Justify.Center" Spacing="2">
+            <MudItem xs="4" Class="d-flex flex-column align-center">
+                <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">DEF</MudText>
+                <MudNumericField @bind-Value="Target.Def"
+                                 @bind-Value:after="Changed"
+                                 Variant="Variant.Outlined"
+                                 Class="square-input"
+                                 HideSpinButtons="true"
+                                 Min="0" Max="99" />
+            </MudItem>
+            <MudItem xs="4" Class="d-flex flex-column align-center">
+                <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">ARM</MudText>
+                <MudNumericField @bind-Value="Target.Arm"
+                                 @bind-Value:after="Changed"
+                                 Variant="Variant.Outlined"
+                                 Class="square-input"
+                                 HideSpinButtons="true"
+                                 Min="0" Max="99" />
+            </MudItem>
+            <MudItem xs="4" Class="d-flex flex-column align-center">
+                <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">BOXES</MudText>
+                <MudNumericField @bind-Value="Target.Boxes"
+                                 @bind-Value:after="Changed"
+                                 Variant="Variant.Outlined"
+                                 Class="square-input"
+                                 HideSpinButtons="true"
+                                 Min="1" Max="99" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+else
+{
+    @* Single-target mode: renders exactly as the original inline inputs *@
+    <MudItem xs="4" Class="d-flex flex-column align-center">
+        <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">TARGET DEF</MudText>
+        <MudNumericField @bind-Value="Target.Def"
+                         @bind-Value:after="Changed"
+                         Variant="Variant.Outlined"
+                         Class="square-input"
+                         HideSpinButtons="true"
+                         Min="0" Max="99" />
+    </MudItem>
+
+    <MudItem xs="4" Class="d-flex flex-column align-center">
+        <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">TARGET ARM</MudText>
+        <MudNumericField @bind-Value="Target.Arm"
+                         @bind-Value:after="Changed"
+                         Variant="Variant.Outlined"
+                         Class="square-input"
+                         HideSpinButtons="true"
+                         Min="0" Max="99" />
+    </MudItem>
+
+    <MudItem xs="4" Class="d-flex flex-column align-center">
+        <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">TARGET BOXES</MudText>
+        <MudNumericField @bind-Value="Target.Boxes"
+                         @bind-Value:after="Changed"
+                         Variant="Variant.Outlined"
+                         Class="square-input"
+                         HideSpinButtons="true"
+                         Min="1" Max="99" />
+    </MudItem>
+}
+
+@code {
+    [Parameter, EditorRequired] public Target Target { get; set; } = default!;
+    [Parameter, EditorRequired] public int    Index  { get; set; }
+    [Parameter] public bool MultiTargetMode { get; set; }
+    [Parameter] public bool ShowRemove      { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+    [Parameter] public EventCallback OnRemove  { get; set; }
+
+    private string CardClass =>
+        Target.IsPriority ? "pa-3 mb-2 target-card priority-target" : "pa-3 mb-2 target-card";
+
+    private async Task Changed() => await OnChanged.InvokeAsync();
+
+    private async Task TogglePriority()
+    {
+        Target.IsPriority = !Target.IsPriority;
+        await OnChanged.InvokeAsync();
+    }
+}

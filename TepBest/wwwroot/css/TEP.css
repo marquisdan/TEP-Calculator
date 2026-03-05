@@ -152,3 +152,74 @@
     width: 150px !important;
     min-width: 150px !important;
 }
+
+/* =============================================
+   Multi-target mode
+   ============================================= */
+
+/* Target card wrapper */
+.target-card {
+    border: 1px solid rgba(var(--mud-palette-primary-rgb), 0.25);
+    border-radius: 10px;
+}
+
+/* Priority target — warning-coloured left accent */
+.priority-target {
+    border-left: 3px solid var(--mud-palette-warning) !important;
+}
+
+/* Label field inside target card — stretch to fill available width */
+.target-label-field {
+    flex: 1;
+}
+
+.target-label-field .mud-input-root {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Priority star in expand detail rows */
+.priority-star {
+    color: var(--mud-palette-warning);
+    font-size: 0.75rem;
+    margin-left: 2px;
+}
+
+/* Expand detail row */
+.expand-row td {
+    padding: 0 !important;
+    border-top: none !important;
+}
+
+/* Nested per-target breakdown table */
+.expand-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(var(--mud-palette-primary-rgb), 0.05);
+}
+
+.expand-detail-table th {
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-secondary);
+    text-align: center;
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(var(--mud-palette-primary-rgb), 0.15);
+}
+
+.expand-detail-table td {
+    font-size: 0.78rem;
+    text-align: center;
+    padding: 3px 6px;
+    border-bottom: 1px solid rgba(var(--mud-palette-primary-rgb), 0.08);
+}
+
+.expand-detail-table tr:last-child td {
+    border-bottom: none;
+}
+
+.expand-detail-table td:first-child {
+    text-align: left;
+    font-weight: 600;
+}
