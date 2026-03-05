@@ -227,42 +227,39 @@
                             <th class="@ThClass(SortColumns.AttackDice)" @onclick="() => ClickHeader(SortColumns.AttackDice)">ATK@(SortCaret(SortColumns.AttackDice))</th>
                             <th class="@ThClass(SortColumns.DamageDice)" @onclick="() => ClickHeader(SortColumns.DamageDice)">DMG@(SortCaret(SortColumns.DamageDice))</th>
                             <th class="@ThClass(SortColumns.NumAttacks)" @onclick="() => ClickHeader(SortColumns.NumAttacks)">#ATK@(SortCaret(SortColumns.NumAttacks))</th>
-                            <th class="@ThClass(SortColumns.HitChance)" @onclick="() => ClickHeader(SortColumns.HitChance)">
-                                @if (multiTargetMode)
-                                {
-                                    <div class="d-flex align-center justify-center gap-1">
-                                        AVG HIT%@(SortCaret(SortColumns.HitChance))
-                                        <MudTooltip Text="Average hit probability across all targets in the line. Each target is rolled independently." Placement="Placement.Top" Arrow="true">
-                                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
-                                        </MudTooltip>
-                                    </div>
-                                }
-                                else
-                                {
+                            @if (!multiTargetMode)
+                            {
+                                <th class="@ThClass(SortColumns.HitChance)" @onclick="() => ClickHeader(SortColumns.HitChance)">
                                     <span>HIT%@(SortCaret(SortColumns.HitChance))</span>
-                                }
-                            </th>
+                                </th>
+                            }
                             <th class="@ThClass(SortColumns.AvgDmg)" @onclick="() => ClickHeader(SortColumns.AvgDmg)">
                                 @if (multiTargetMode)
                                 {
                                     <div class="d-flex align-center justify-center gap-1">
                                         TOTAL@(SortCaret(SortColumns.AvgDmg))
                                         <MudTooltip Text="Sum of expected damage across all targets" Placement="Placement.Top" Arrow="true">
-                                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                                            <MudIcon Icon="@Icons.Material.Filled.Info" Style="font-size:0.75rem" Color="Color.Secondary" />
                                         </MudTooltip>
                                     </div>
                                 }
                                 else
                                 {
-                                    <span>TOTAL@(SortCaret(SortColumns.AvgDmg))</span>
+                                    <div class="d-flex align-center justify-center gap-1">
+                                        TOTAL@(SortCaret(SortColumns.AvgDmg))
+                                        <MudTooltip Text="Expected Total = Number of Attacks × Chance to Hit × Average Damage per Hit"
+                                                    Placement="Placement.Top" Arrow="true">
+                                            <MudIcon Icon="@Icons.Material.Filled.Info" Style="font-size:0.75rem" Color="Color.Secondary" />
+                                        </MudTooltip>
+                                    </div>
                                 }
                             </th>
-                            <th class="@ThClass(SortColumns.IfAllHit)" @onclick="() => ClickHeader(SortColumns.IfAllHit)">@(multiTargetMode ? "AVG EACH" : "ALL HIT")@(SortCaret(SortColumns.IfAllHit))</th>
+
                             <th class="@ThClass(SortColumns.KillChance)" @onclick="() => ClickHeader(SortColumns.KillChance)">
                                 <div class="d-flex align-center justify-center gap-1">
                                     @(multiTargetMode ? "~# KILLS" : "KILL%")@(SortCaret(SortColumns.KillChance))
                                     <MudTooltip Text="@KillTooltip" Placement="Placement.Top" Arrow="true">
-                                        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                                        <MudIcon Icon="@Icons.Material.Filled.Info" Style="font-size:0.75rem" Color="Color.Secondary" />
                                     </MudTooltip>
                                 </div>
                             </th>
@@ -280,9 +277,11 @@
                                 <td>@a.AttackDice</td>
                                 <td>@a.DamageDice</td>
                                 <td>@a.Attacks</td>
-                                <td>@(multiTargetMode ? FormatHitChance(a.PerTarget.Average(p => p.Hit)) : FormatHitChance(a.PerTarget[0].Hit))</td>
+                                @if (!multiTargetMode)
+                                {
+                                    <td>@FormatHitChance(a.PerTarget[0].Hit)</td>
+                                }
                                 <td>@a.ExpectedTotalDamage.ToString("F1")</td>
-                                <td>@(multiTargetMode ? (a.AllHitDamage / targets.Count).ToString("F1") : a.AllHitDamage.ToString("F1"))</td>
                                 <td>@FormatExpectedKills(a.ExpectedKills)</td>
                                 @if (multiTargetMode)
                                 {
@@ -296,7 +295,7 @@
                             @if (multiTargetMode && isExpanded)
                             {
                                 <tr class="expand-row">
-                                    <td colspan="8">
+                                    <td colspan="5">
                                         <table class="expand-detail-table">
                                             <thead>
                                                 <tr>

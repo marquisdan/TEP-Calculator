@@ -104,16 +104,18 @@
 
 /* Allocation table */
 .alloc-table th {
-    font-size: 0.7rem;
-    letter-spacing: 0.05em;
+    font-size: 0.65rem;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
     color: var(--mud-palette-text-secondary);
     text-align: center !important;
+    padding: 4px 6px !important;
 }
 
 .alloc-table td {
     text-align: center !important;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    padding: 4px 6px !important;
 }
 
 /* Sortable column headers */
