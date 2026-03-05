@@ -116,6 +116,21 @@
     font-size: 0.85rem;
 }
 
+/* Sortable column headers */
+.th-sort {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.th-sort:hover {
+    color: var(--mud-palette-primary) !important;
+}
+
+.th-sort-active {
+    color: var(--mud-palette-primary) !important;
+}
+
 /* Highlight the best allocation row */
 .best-row td {
     color: var(--mud-palette-primary) !important;

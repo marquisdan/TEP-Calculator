@@ -72,18 +72,6 @@
                     <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.RestartAlt"
                                OnClick="ResetTargets">Reset</MudButton>
-                    <div class="d-flex align-center gap-1 ml-auto">
-                        <MudTooltip Text="When no priority target is set: Most Kills maximises expected kills (Σ kill probability per target). Most Damage maximises aggregate expected damage. Priority targets always optimise for kill chance first."
-                                    Placement="Placement.Top" Arrow="true">
-                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
-                        </MudTooltip>
-                        <MudToggleGroup @bind-Value="multiTiebreaker" @bind-Value:after="Recalculate"
-                                        T="MultiTiebreaker" SelectionMode="SelectionMode.SingleSelection"
-                                        Color="Color.Primary" Size="Size.Small">
-                            <MudToggleItem Value="MultiTiebreaker.Kills" Text="Most Kills" />
-                            <MudToggleItem Value="MultiTiebreaker.Damage" Text="Most Damage" />
-                        </MudToggleGroup>
-                    </div>
                 </div>
 
                 @for (int i = 0; i < targets.Count; i++)
@@ -106,9 +94,27 @@
         {
             <MudItem xs="12" md="7">
 
-                <MudText Typo="Typo.overline" Color="Color.Secondary" Align="Align.Center" Class="mb-2">
-                    Best Allocation
-                </MudText>
+                <div class="d-flex align-center mb-2">
+                    <MudText Typo="Typo.overline" Color="Color.Secondary" Class="flex-grow-1">
+                        Best Allocation
+                    </MudText>
+                    @if (multiTargetMode)
+                    {
+                        <div class="d-flex align-center gap-1">
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">Tiebreaker</MudText>
+                            <MudTooltip Text="When no priority target is set: Most Kills maximises kill probability per target. Most Damage maximises expected damage. Priority targets always optimise for kill chance first."
+                                        Placement="Placement.Top" Arrow="true">
+                                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                            </MudTooltip>
+                            <MudToggleGroup @bind-Value="multiTiebreaker" @bind-Value:after="Recalculate"
+                                            T="MultiTiebreaker" SelectionMode="SelectionMode.SingleSelection"
+                                            Color="Color.Primary" Size="Size.Small">
+                                <MudToggleItem Value="MultiTiebreaker.Kills" Text="Most Kills" />
+                                <MudToggleItem Value="MultiTiebreaker.Damage" Text="Most Damage" />
+                            </MudToggleGroup>
+                        </div>
+                    }
+                </div>
 
                 <MudPaper Elevation="4" Class="pa-4 mb-5 result-card result-card-total">
                     <MudGrid Justify="Justify.Center" Spacing="1">
@@ -142,7 +148,7 @@
                         </MudItem>
 
                         <MudItem xs="3" Class="d-flex flex-column align-center mt-2">
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(multiTargetMode ? "AGGREGATE" : "EXPECTED")</MudText>
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(multiTargetMode ? "TOTAL" : "EXPECTED")</MudText>
                             <div class="d-flex align-center gap-1">
                                 <MudText Typo="Typo.overline" Color="Color.Secondary">TOTAL</MudText>
                                 <MudTooltip Text="@(multiTargetMode
@@ -187,10 +193,10 @@
                 </MudText>
 
                 <MudExpansionPanels Class="mb-3 sort-accordion" Elevation="0">
-                    <MudExpansionPanel Text="Sort Options" Dense="true" DisableGutters="true">
+                    <MudExpansionPanel Text="Advanced Sort" Dense="true" DisableGutters="true">
                         <div class="d-flex flex-column gap-2 pt-2">
                             <div class="d-flex align-center gap-2">
-                                <MudText Typo="Typo.overline" Color="Color.Secondary" Style="white-space:nowrap;width:70px">Filter By:</MudText>
+                                <MudText Typo="Typo.overline" Color="Color.Secondary" Style"white-space:nowrap;width:70px">Filter By:</MudText>
                                 <MudSelect @bind-Value="sort1" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                            Class="sort-select" T="string">
                                     @foreach (var opt in Sort1Options)
@@ -218,14 +224,14 @@
                 <MudSimpleTable Dense="true" Hover="true" Class="alloc-table">
                     <thead>
                         <tr>
-                            <th>ATK</th>
-                            <th>DMG</th>
-                            <th>#ATK</th>
-                            <th>
+                            <th class="@ThClass(SortColumns.AttackDice)" @onclick="() => ClickHeader(SortColumns.AttackDice)">ATK@(SortCaret(SortColumns.AttackDice))</th>
+                            <th class="@ThClass(SortColumns.DamageDice)" @onclick="() => ClickHeader(SortColumns.DamageDice)">DMG@(SortCaret(SortColumns.DamageDice))</th>
+                            <th class="@ThClass(SortColumns.NumAttacks)" @onclick="() => ClickHeader(SortColumns.NumAttacks)">#ATK@(SortCaret(SortColumns.NumAttacks))</th>
+                            <th class="@ThClass(SortColumns.HitChance)" @onclick="() => ClickHeader(SortColumns.HitChance)">
                                 @if (multiTargetMode)
                                 {
                                     <div class="d-flex align-center justify-center gap-1">
-                                        AVG HIT%
+                                        AVG HIT%@(SortCaret(SortColumns.HitChance))
                                         <MudTooltip Text="Average hit probability across all targets in the line. Each target is rolled independently." Placement="Placement.Top" Arrow="true">
                                             <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
                                         </MudTooltip>
@@ -233,14 +239,28 @@
                                 }
                                 else
                                 {
-                                    @:HIT%
+                                    <span>HIT%@(SortCaret(SortColumns.HitChance))</span>
                                 }
                             </th>
-                            <th>@(multiTargetMode ? "AGGREGATE" : "TOTAL")</th>
-                            <th>@(multiTargetMode ? "AVG EACH" : "ALL HIT")</th>
-                            <th>
+                            <th class="@ThClass(SortColumns.AvgDmg)" @onclick="() => ClickHeader(SortColumns.AvgDmg)">
+                                @if (multiTargetMode)
+                                {
+                                    <div class="d-flex align-center justify-center gap-1">
+                                        TOTAL@(SortCaret(SortColumns.AvgDmg))
+                                        <MudTooltip Text="Sum of expected damage across all targets" Placement="Placement.Top" Arrow="true">
+                                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                                        </MudTooltip>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span>TOTAL@(SortCaret(SortColumns.AvgDmg))</span>
+                                }
+                            </th>
+                            <th class="@ThClass(SortColumns.IfAllHit)" @onclick="() => ClickHeader(SortColumns.IfAllHit)">@(multiTargetMode ? "AVG EACH" : "ALL HIT")@(SortCaret(SortColumns.IfAllHit))</th>
+                            <th class="@ThClass(SortColumns.KillChance)" @onclick="() => ClickHeader(SortColumns.KillChance)">
                                 <div class="d-flex align-center justify-center gap-1">
-                                    @(multiTargetMode ? "EXP KILLS" : "KILL%")
+                                    @(multiTargetMode ? "~# KILLS" : "KILL%")@(SortCaret(SortColumns.KillChance))
                                     <MudTooltip Text="@KillTooltip" Placement="Placement.Top" Arrow="true">
                                         <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
                                     </MudTooltip>
@@ -345,8 +365,9 @@
     private static readonly string[] Sort1Options = SortColumns.Sort1Options;
     private static readonly string[] Sort2Options = SortColumns.Sort2Options;
 
-    private string sort1 = SortColumns.AvgDmg;
-    private string sort2 = SortColumns.None;
+    private string sort1    = SortColumns.KillChance;
+    private bool   sort1Asc = false;
+    private string sort2    = SortColumns.None;
 
     // ── Display helpers ──────────────────────────────────────────────────────
 
@@ -377,7 +398,9 @@
     {
         get
         {
-            var ordered = allocations.OrderByDescending(SortKey(sort1));
+            var ordered = sort1Asc
+                ? allocations.OrderBy(SortKey(sort1))
+                : allocations.OrderByDescending(SortKey(sort1));
             return sort2 != SortColumns.None
                 ? ordered.ThenByDescending(SortKey(sort2))
                 : ordered;
@@ -396,7 +419,16 @@
         _                                      => a => 0
     };
 
-    private void ResetSort() { sort1 = SortColumns.AvgDmg; sort2 = SortColumns.None; }
+    private void ResetSort() { sort1 = SortColumns.KillChance; sort1Asc = false; sort2 = SortColumns.None; }
+
+    private void ClickHeader(string col)
+    {
+        if (sort1 == col) sort1Asc = !sort1Asc;
+        else { sort1 = col; sort1Asc = false; }
+    }
+
+    private string ThClass(string col)   => sort1 == col ? "th-sort th-sort-active" : "th-sort";
+    private string SortCaret(string col)  => sort1 == col ? (sort1Asc ? " ▲" : " ▼") : "";
 
     // ── Target management ────────────────────────────────────────────────────
 
@@ -425,7 +457,7 @@
         Recalculate();
     }
 
-    private void OnModeSwitched() => ResetTargets();
+    private void OnModeSwitched() { ResetTargets(); ResetSort(); }
 
     private void ToggleExpand(BuffAllocation a)
     {
@@ -507,19 +539,13 @@
                 .First();
         }
 
-        // No priority targets, single effective target: prefer hit chance when
-        // expected damage already clears the boxes threshold.
+        // No priority targets, single effective target: maximise kill chance.
         if (!multiTargetMode || targets.Count == 1)
         {
-            var sufficient = allocations
-                .Where(a => a.ExpectedTotalDamage >= targets[0].Boxes + 1)
-                .ToList();
-
-            if (sufficient.Count > 0)
-                return sufficient
-                    .OrderByDescending(a => a.PerTarget[0].Hit)
-                    .ThenByDescending(a => a.ExpectedTotalDamage)
-                    .First();
+            return allocations
+                .OrderByDescending(a => a.ExpectedKills)
+                .ThenByDescending(a => a.ExpectedTotalDamage)
+                .First();
         }
 
         // Multiple targets, no priority: user-selected tiebreaker

@@ -3,7 +3,7 @@
 @if (MultiTargetMode)
 {
     <MudPaper Elevation="2" Class="@CardClass">        
-        <div class="d-flex align-center justify-space-between mb-2">
+        <div class="d-flex align-center justify-space-between mb-2 gap-2">
             <MudTextField @bind-Value="Target.Label"
                           Placeholder="@($"Target {Index + 1}")"
                           Variant="Variant.Text"
@@ -14,10 +14,13 @@
             <div class="d-flex align-center gap-1">
                 <MudTooltip Text="Priority targets must meet the expected damage threshold before any allocation is considered best. If no allocation qualifies, best is chosen by highest aggregate damage."
                             Placement="Placement.Top" Arrow="true">
-                    <MudIconButton Icon="@(Target.IsPriority ? Icons.Material.Filled.Star : Icons.Material.Outlined.StarBorder)"
-                                   Color="@(Target.IsPriority ? Color.Warning : Color.Default)"
-                                   Size="Size.Small"
-                                   OnClick="TogglePriority" />
+                    <div class="d-flex flex-column align-center" style="cursor:pointer" @onclick="TogglePriority">
+                        <MudText Typo="Typo.caption" Color="@(Target.IsPriority ? Color.Warning : Color.Secondary)"
+                                 Style="font-size:0.6rem; line-height:1; margin-bottom:1px; user-select:none;">Priority</MudText>
+                        <MudIcon Icon="@(Target.IsPriority ? Icons.Material.Filled.Star : Icons.Material.Outlined.StarBorder)"
+                                 Color="@(Target.IsPriority ? Color.Warning : Color.Default)"
+                                 Size="Size.Small" />
+                    </div>
                 </MudTooltip>
                 @if (ShowRemove)
                 {
