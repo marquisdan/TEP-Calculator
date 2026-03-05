@@ -3,175 +3,196 @@
 @using System.Linq
 <PageTitle>TEP Calculator</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="pa-3 pt-6">
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-3 pt-6">
 
-    <MudText Typo="Typo.h6" Align="Align.Center" Class="mb-1"
-             Style="letter-spacing: 0.25em; font-weight: 800; text-transform: uppercase;">
-        ⚔ TEP Calculator ⚔
-    </MudText>
+    <div class="d-flex align-center justify-center mb-1 gap-3">
+        <img src="favicon-32.png" class="tep-title-icon" alt="" />
+        <MudText Typo="Typo.h6" Align="Align.Center" Class="tep-title"
+                 Style="letter-spacing: 0.25em; font-weight: 800; text-transform: uppercase;">
+            TEP Calculator
+        </MudText>
+        <img src="favicon-32.png" class="tep-title-icon" alt="" />
+    </div>
     <MudDivider Class="mb-5" />
 
-    <MudGrid Justify="Justify.Center" Spacing="3">
+    <MudGrid Spacing="16">
 
-        <MudItem xs="6" Class="d-flex flex-column align-center">
-            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">RAT</MudText>
-            <MudNumericField @bind-Value="rat"
-                             @bind-Value:after="Recalculate"
-                             Variant="Variant.Outlined"
-                             Class="square-input"
-                             HideSpinButtons="true"
-                             Min="0" Max="99" />
+        @* LEFT COLUMN: inputs + best allocation *@
+        <MudItem xs="12" md="5">
+
+            <MudGrid Justify="Justify.Center" Spacing="3">
+
+                <MudItem xs="6" Class="d-flex flex-column align-center">
+                    <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">RAT</MudText>
+                    <MudNumericField @bind-Value="rat"
+                                     @bind-Value:after="Recalculate"
+                                     Variant="Variant.Outlined"
+                                     Class="square-input"
+                                     HideSpinButtons="true"
+                                     Min="0" Max="99" />
+                </MudItem>
+
+                <MudItem xs="6" Class="d-flex flex-column align-center">
+                    <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">POW</MudText>
+                    <MudNumericField @bind-Value="pow"
+                                     @bind-Value:after="Recalculate"
+                                     Variant="Variant.Outlined"
+                                     Class="square-input"
+                                     HideSpinButtons="true"
+                                     Min="0" Max="99" />
+                </MudItem>
+
+                <MudItem xs="6" Class="d-flex flex-column align-center">
+                    <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">TARGET DEF</MudText>
+                    <MudNumericField @bind-Value="targetDef"
+                                     @bind-Value:after="Recalculate"
+                                     Variant="Variant.Outlined"
+                                     Class="square-input"
+                                     HideSpinButtons="true"
+                                     Min="0" Max="99" />
+                </MudItem>
+
+                <MudItem xs="6" Class="d-flex flex-column align-center">
+                    <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">TARGET ARM</MudText>
+                    <MudNumericField @bind-Value="targetArm"
+                                     @bind-Value:after="Recalculate"
+                                     Variant="Variant.Outlined"
+                                     Class="square-input"
+                                     HideSpinButtons="true"
+                                     Min="0" Max="99" />
+                </MudItem>
+
+            </MudGrid>
+
+            @if (best is not null)
+            {
+                <MudDivider Class="mt-5 mb-4" />
+
+                <MudText Typo="Typo.overline" Color="Color.Secondary" Align="Align.Center" Class="mb-2">
+                    Best Allocation
+                </MudText>
+
+                <MudPaper Elevation="4" Class="pa-4 mb-5 result-card result-card-total">
+                    <MudGrid Justify="Justify.Center" Spacing="1">
+                        <MudItem xs="4" Class="d-flex flex-column align-center">
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">ATK DICE</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight:800">@best.AttackDice</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="d-flex flex-column align-center">
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">DMG DICE</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight:800">@best.DamageDice</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="d-flex flex-column align-center">
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">ATTACKS</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight:800">@best.Attacks</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">HIT</MudText>
+                            <div class="d-flex align-center gap-1">
+                                <MudText Typo="Typo.overline" Color="Color.Secondary">CHANCE</MudText>
+                                <MudTooltip Text="Probability of hitting the target, rounded to the nearest 0.1%. Snake eyes (all 1s) always miss; boxcars (all 6s) always hit."
+                                            Placement="Placement.Top" Arrow="true">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                                </MudTooltip>
+                            </div>
+                            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@FormatHitChance(best.HitChance)</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">EXPECTED</MudText>
+                            <div class="d-flex align-center gap-1">
+                                <MudText Typo="Typo.overline" Color="Color.Secondary">TOTAL</MudText>
+                                <MudTooltip Text="Expected Total = Number of Attacks × Chance to Hit × Average Damage per Hit"
+                                            Placement="Placement.Top" Arrow="true">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                                </MudTooltip>
+                            </div>
+                            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@best.ExpectedTotalDamage.ToString("F1")</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">IF ALL</MudText>
+                            <div class="d-flex align-center gap-1">
+                                <MudText Typo="Typo.overline" Color="Color.Secondary">HIT</MudText>
+                                <MudTooltip Text="If All Hit = Number of Attacks × Average Damage per Hit (assumes every attack lands)"
+                                            Placement="Placement.Top" Arrow="true">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                                </MudTooltip>
+                            </div>
+                            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@best.AllHitDamage.ToString("F1")</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            }
+
         </MudItem>
 
-        <MudItem xs="6" Class="d-flex flex-column align-center">
-            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">POW</MudText>
-            <MudNumericField @bind-Value="pow"
-                             @bind-Value:after="Recalculate"
-                             Variant="Variant.Outlined"
-                             Class="square-input"
-                             HideSpinButtons="true"
-                             Min="0" Max="99" />
-        </MudItem>
+        @* RIGHT COLUMN: all allocations table + sort *@
+        @if (best is not null)
+        {
+            <MudItem xs="12" md="7">
 
-        <MudItem xs="6" Class="d-flex flex-column align-center">
-            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">TARGET DEF</MudText>
-            <MudNumericField @bind-Value="targetDef"
-                             @bind-Value:after="Recalculate"
-                             Variant="Variant.Outlined"
-                             Class="square-input"
-                             HideSpinButtons="true"
-                             Min="0" Max="99" />
-        </MudItem>
+                <MudText Typo="Typo.overline" Color="Color.Secondary" Align="Align.Center" Class="mb-2">
+                    All Allocations
+                </MudText>
 
-        <MudItem xs="6" Class="d-flex flex-column align-center">
-            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1">TARGET ARM</MudText>
-            <MudNumericField @bind-Value="targetArm"
-                             @bind-Value:after="Recalculate"
-                             Variant="Variant.Outlined"
-                             Class="square-input"
-                             HideSpinButtons="true"
-                             Min="0" Max="99" />
-        </MudItem>
+                <MudExpansionPanels Class="mb-3 sort-accordion" Elevation="0">
+                    <MudExpansionPanel Text="Sort Options" Dense="true" DisableGutters="true">
+                        <div class="d-flex flex-column gap-2 pt-2">
+                            <div class="d-flex align-center gap-2">
+                                <MudText Typo="Typo.overline" Color="Color.Secondary" Style="white-space:nowrap;width:70px">Filter By:</MudText>
+                                <MudSelect @bind-Value="sort1" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                           Class="sort-select" T="string">
+                                    @foreach (var opt in Sort1Options)
+                                    {
+                                        <MudSelectItem Value="@opt">@opt</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </div>
+                            <div class="d-flex align-center gap-2">
+                                <MudText Typo="Typo.overline" Color="Color.Secondary" Style="white-space:nowrap;width:70px">Then:</MudText>
+                                <MudSelect @bind-Value="sort2" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                           Class="sort-select" T="string">
+                                    @foreach (var opt in Sort2Options)
+                                    {
+                                        <MudSelectItem Value="@opt">@opt</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </div>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" Class="mb-2"
+                                       FullWidth="true" OnClick="ResetSort">Set Default</MudButton>
+                        </div>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+
+                <MudSimpleTable Dense="true" Hover="true" Class="alloc-table">
+                    <thead>
+                        <tr>
+                            <th>ATK</th>
+                            <th>DMG</th>
+                            <th>#ATK</th>
+                            <th>HIT%</th>
+                            <th>TOTAL</th>
+                            <th>ALL HIT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in SortedAllocations)
+                        {
+                            <tr class="@(a == best ? "best-row" : "")">
+                                <td>@a.AttackDice</td>
+                                <td>@a.DamageDice</td>
+                                <td>@a.Attacks</td>
+                                <td>@FormatHitChance(a.HitChance)</td>
+                                <td>@a.ExpectedTotalDamage.ToString("F1")</td>
+                                <td>@a.AllHitDamage.ToString("F1")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+
+            </MudItem>
+        }
 
     </MudGrid>
-
-    <MudDivider Class="mt-5 mb-4" />
-
-    @if (best is not null)
-    {
-        <MudText Typo="Typo.overline" Color="Color.Secondary" Align="Align.Center" Class="mb-2">
-            Best Allocation
-        </MudText>
-
-        <MudPaper Elevation="4" Class="pa-4 mb-5 result-card result-card-total">
-            <MudGrid Justify="Justify.Center" Spacing="1">
-                <MudItem xs="4" Class="d-flex flex-column align-center">
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">ATK DICE</MudText>
-                    <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight:800">@best.AttackDice</MudText>
-                </MudItem>
-                <MudItem xs="4" Class="d-flex flex-column align-center">
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">DMG DICE</MudText>
-                    <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight:800">@best.DamageDice</MudText>
-                </MudItem>
-                <MudItem xs="4" Class="d-flex flex-column align-center">
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">ATTACKS</MudText>
-                    <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight:800">@best.Attacks</MudText>
-                </MudItem>
-                <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">HIT</MudText>
-                    <div class="d-flex align-center gap-1">
-                        <MudText Typo="Typo.overline" Color="Color.Secondary">CHANCE</MudText>
-                        <MudTooltip Text="Probability of hitting the target, rounded to the nearest 0.1%. Snake eyes (all 1s) always miss; boxcars (all 6s) always hit."
-                                    Placement="Placement.Top" Arrow="true">
-                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
-                        </MudTooltip>
-                    </div>
-                    <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@FormatHitChance(best.HitChance)</MudText>
-                </MudItem>
-                <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">EXPECTED</MudText>
-                    <div class="d-flex align-center gap-1">
-                        <MudText Typo="Typo.overline" Color="Color.Secondary">TOTAL</MudText>
-                        <MudTooltip Text="Expected Total = Number of Attacks × Chance to Hit × Average Damage per Hit"
-                                    Placement="Placement.Top" Arrow="true">
-                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
-                        </MudTooltip>
-                    </div>
-                    <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@best.ExpectedTotalDamage.ToString("F1")</MudText>
-                </MudItem>
-                <MudItem xs="4" Class="d-flex flex-column align-center mt-2">
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">IF ALL</MudText>
-                    <div class="d-flex align-center gap-1">
-                        <MudText Typo="Typo.overline" Color="Color.Secondary">HIT</MudText>
-                        <MudTooltip Text="If All Hit = Number of Attacks × Average Damage per Hit (assumes every attack lands)"
-                                    Placement="Placement.Top" Arrow="true">
-                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
-                        </MudTooltip>
-                    </div>
-                    <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@best.AllHitDamage.ToString("F1")</MudText>
-                </MudItem>
-            </MudGrid>
-        </MudPaper>
-
-        <MudText Typo="Typo.overline" Color="Color.Secondary" Align="Align.Center" Class="mb-2">
-            All Allocations
-        </MudText>
-
-        <MudExpansionPanels Class="mb-3 sort-accordion" Elevation="0">
-            <MudExpansionPanel Text="Sort Options" Dense="true" DisableGutters="true">
-                <div class="d-flex flex-column gap-2 pt-2">
-                    <div class="d-flex align-center gap-2">
-                        <MudText Typo="Typo.overline" Color="Color.Secondary" Style="white-space:nowrap;width:70px">Filter By:</MudText>
-                        <MudSelect @bind-Value="sort1" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                   Class="sort-select" T="string">
-                            @foreach (var opt in Sort1Options)
-                            {
-                                <MudSelectItem Value="@opt">@opt</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </div>
-                    <div class="d-flex align-center gap-2">
-                        <MudText Typo="Typo.overline" Color="Color.Secondary" Style="white-space:nowrap;width:70px">Then:</MudText>
-                        <MudSelect @bind-Value="sort2" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                   Class="sort-select" T="string">
-                            @foreach (var opt in Sort2Options)
-                            {
-                                <MudSelectItem Value="@opt">@opt</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </div>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" Class="mb-2"
-                               FullWidth="true" OnClick="ResetSort">Set Default</MudButton>
-                </div>
-            </MudExpansionPanel>
-        </MudExpansionPanels>
-
-        <MudSimpleTable Dense="true" Hover="true" Class="alloc-table">
-            <thead>
-                <tr>
-                    <th>ATK</th>
-                    <th>DMG</th>
-                    <th>#ATK</th>
-                    <th>HIT%</th>
-                    <th>TOTAL</th>
-                    <th>ALL HIT</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var a in SortedAllocations)
-                {
-                    <tr class="@(a == best ? "best-row" : "")">
-                        <td>@a.AttackDice</td>
-                        <td>@a.DamageDice</td>
-                        <td>@a.Attacks</td>
-                        <td>@FormatHitChance(a.HitChance)</td>
-                        <td>@a.ExpectedTotalDamage.ToString("F1")</td>
-                        <td>@a.AllHitDamage.ToString("F1")</td>
-                    </tr>
-                }
-            </tbody>
-        </MudSimpleTable>
-    }
 
     <MudDivider Class="mt-6 mb-3" />
     <MudText Typo="Typo.caption" Align="Align.Center" Color="Color.Secondary" Class="mb-4">
