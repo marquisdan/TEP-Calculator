@@ -159,7 +159,8 @@
 
 /* Target card wrapper */
 .target-card {
-    border: 1px solid rgba(var(--mud-palette-primary-rgb), 0.25);
+    background: rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid rgba(var(--mud-palette-primary-rgb), 0.4);
     border-radius: 10px;
 }
 

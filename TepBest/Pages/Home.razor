@@ -64,7 +64,7 @@
             @* Multi-target controls + target cards *@
             @if (multiTargetMode)
             {
-                <div class="d-flex gap-2 mt-3 mb-2">
+                <div class="d-flex align-center gap-2 mt-3 mb-2">
                     <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.Add"
                                Disabled="targets.Count >= MaxTargets"
@@ -72,6 +72,18 @@
                     <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.RestartAlt"
                                OnClick="ResetTargets">Reset</MudButton>
+                    <div class="d-flex align-center gap-1 ml-auto">
+                        <MudTooltip Text="When no priority target is set: Most Kills maximises expected kills (Σ kill probability per target). Most Damage maximises aggregate expected damage. Priority targets always optimise for kill chance first."
+                                    Placement="Placement.Top" Arrow="true">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                        </MudTooltip>
+                        <MudToggleGroup @bind-Value="multiTiebreaker" @bind-Value:after="Recalculate"
+                                        T="MultiTiebreaker" SelectionMode="SelectionMode.SingleSelection"
+                                        Color="Color.Primary" Size="Size.Small">
+                            <MudToggleItem Value="MultiTiebreaker.Kills" Text="Most Kills" />
+                            <MudToggleItem Value="MultiTiebreaker.Damage" Text="Most Damage" />
+                        </MudToggleGroup>
+                    </div>
                 </div>
 
                 @for (int i = 0; i < targets.Count; i++)
@@ -87,9 +99,12 @@
                 }
             }
 
-            @if (best is not null)
-            {
-                <MudDivider Class="mt-5 mb-4" />
+        </MudItem>
+
+        @* RIGHT COLUMN: all allocations table + sort *@
+        @if (best is not null)
+        {
+            <MudItem xs="12" md="7">
 
                 <MudText Typo="Typo.overline" Color="Color.Secondary" Align="Align.Center" Class="mb-2">
                     Best Allocation
@@ -111,19 +126,19 @@
                         </MudItem>
 
                         <MudItem xs="3" Class="d-flex flex-column align-center mt-2">
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">HIT</MudText>
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(multiTargetMode ? "AVG" : "HIT")</MudText>
                             <div class="d-flex align-center gap-1">
                                 <MudText Typo="Typo.overline" Color="Color.Secondary">
-                                    @(multiTargetMode ? $"vs. {TargetLabel(0)}" : "CHANCE")
+                                    @(multiTargetMode ? "HIT%" : "CHANCE")
                                 </MudText>
                                 <MudTooltip Text="@(multiTargetMode
-                                    ? $"Hit probability against {TargetLabel(0)} (first target). Each target uses independent rolls."
+                                    ? "Average hit probability across all targets in the line. Each target is rolled independently; lower-DEF targets pull the average up."
                                     : "Probability of hitting the target, rounded to the nearest 0.1%. Snake eyes (all 1s) always miss; boxcars (all 6s) always hit.")"
                                             Placement="Placement.Top" Arrow="true">
                                     <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
                                 </MudTooltip>
                             </div>
-                            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@FormatHitChance(best.PerTarget[0].Hit)</MudText>
+                            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:800">@(multiTargetMode ? FormatHitChance(best.PerTarget.Average(p => p.Hit)) : FormatHitChance(best.PerTarget[0].Hit))</MudText>
                         </MudItem>
 
                         <MudItem xs="3" Class="d-flex flex-column align-center mt-2">
@@ -166,14 +181,6 @@
                         </MudItem>
                     </MudGrid>
                 </MudPaper>
-            }
-
-        </MudItem>
-
-        @* RIGHT COLUMN: all allocations table + sort *@
-        @if (best is not null)
-        {
-            <MudItem xs="12" md="7">
 
                 <MudText Typo="Typo.overline" Color="Color.Secondary" Align="Align.Center" Class="mb-2">
                     All Allocations
@@ -214,7 +221,21 @@
                             <th>ATK</th>
                             <th>DMG</th>
                             <th>#ATK</th>
-                            <th>HIT%</th>
+                            <th>
+                                @if (multiTargetMode)
+                                {
+                                    <div class="d-flex align-center justify-center gap-1">
+                                        AVG HIT%
+                                        <MudTooltip Text="Average hit probability across all targets in the line. Each target is rolled independently." Placement="Placement.Top" Arrow="true">
+                                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                                        </MudTooltip>
+                                    </div>
+                                }
+                                else
+                                {
+                                    @:HIT%
+                                }
+                            </th>
                             <th>@(multiTargetMode ? "AGGREGATE" : "TOTAL")</th>
                             <th>@(multiTargetMode ? "AVG EACH" : "ALL HIT")</th>
                             <th>
@@ -239,7 +260,7 @@
                                 <td>@a.AttackDice</td>
                                 <td>@a.DamageDice</td>
                                 <td>@a.Attacks</td>
-                                <td>@FormatHitChance(a.PerTarget[0].Hit)</td>
+                                <td>@(multiTargetMode ? FormatHitChance(a.PerTarget.Average(p => p.Hit)) : FormatHitChance(a.PerTarget[0].Hit))</td>
                                 <td>@a.ExpectedTotalDamage.ToString("F1")</td>
                                 <td>@(multiTargetMode ? (a.AllHitDamage / targets.Count).ToString("F1") : a.AllHitDamage.ToString("F1"))</td>
                                 <td>@FormatExpectedKills(a.ExpectedKills)</td>
@@ -314,7 +335,8 @@
     private int pow = 11;
 
     private List<Target> targets = [new Target()];
-    private bool multiTargetMode = false;
+    private bool             multiTargetMode  = false;
+    private MultiTiebreaker  multiTiebreaker  = MultiTiebreaker.Kills;
 
     private List<BuffAllocation> allocations = new();
     private BuffAllocation? best;
@@ -344,6 +366,7 @@
     private static string FormatHitChance(double chance)
     {
         if (chance >= 0.9995) return ">99.9%";
+        if (chance == 0)      return "0%";
         if (chance <= 0.0005) return "<0.1%";
         return chance.ToString("P1");
     }
@@ -468,42 +491,26 @@
     {
         if (allocations.Count == 0) return null;
 
-        var priorityTargets = targets
+        var priorityIndices = targets
             .Select((t, i) => (t, i))
             .Where(x => x.t.IsPriority)
+            .Select(x => x.i)
             .ToList();
 
-        if (priorityTargets.Count > 0)
+        if (priorityIndices.Count > 0)
         {
-            // Hard gate: every priority target must have expected_i >= boxes + 1
-            var gated = allocations
-                .Where(a => priorityTargets.All(p => a.PerTarget[p.i].Expected >= p.t.Boxes + 1))
-                .ToList();
-
-            if (gated.Count > 0)
-                return gated.OrderByDescending(a => a.ExpectedTotalDamage).First();
-
-            // Fallback: nothing clears the gate — pick highest aggregate
-            return allocations.OrderByDescending(a => a.ExpectedTotalDamage).First();
+            // Priority targets: maximise kill chance on them first (directly rewards
+            // attack dice against high-DEF targets), then aggregate as tiebreaker.
+            return allocations
+                .OrderByDescending(a => priorityIndices.Sum(i => a.PerTarget[i].Kill))
+                .ThenByDescending(a => a.ExpectedTotalDamage)
+                .First();
         }
 
-        if (!multiTargetMode)
+        // No priority targets, single effective target: prefer hit chance when
+        // expected damage already clears the boxes threshold.
+        if (!multiTargetMode || targets.Count == 1)
         {
-            // Single-target, no priority: prefer hit chance if any allocation clears boxes threshold
-            var sufficient = allocations
-                .Where(a => a.ExpectedTotalDamage >= targets[0].Boxes + 1)
-                .ToList();
-
-            if (sufficient.Count > 0)
-                return sufficient
-                    .OrderByDescending(a => a.PerTarget[0].Hit)
-                    .ThenByDescending(a => a.ExpectedTotalDamage)
-                    .First();
-        }
-        else if (targets.Count == 1)
-        {
-            // Multi-target mode but only one target: use the same hit-chance preference
-            // so toggling modes doesn't change the recommendation on identical inputs.
             var sufficient = allocations
                 .Where(a => a.ExpectedTotalDamage >= targets[0].Boxes + 1)
                 .ToList();
@@ -515,7 +522,10 @@
                     .First();
         }
 
-        return allocations.OrderByDescending(a => a.ExpectedTotalDamage).First();
+        // Multiple targets, no priority: user-selected tiebreaker
+        return multiTiebreaker == MultiTiebreaker.Kills
+            ? allocations.OrderByDescending(a => a.ExpectedKills).ThenByDescending(a => a.ExpectedTotalDamage).First()
+            : allocations.OrderByDescending(a => a.ExpectedTotalDamage).ThenByDescending(a => a.ExpectedKills).First();
     }
 
     // ── Math helpers ─────────────────────────────────────────────────────────
