@@ -7,4 +7,6 @@ public class Target
     public int    Arm      { get; set; } = 18;
     public int    Boxes    { get; set; } = 1;
     public bool   IsPriority { get; set; } = false;
+    public int    ExtraAttackDice { get; set; } = 0;
+    public int    ExtraDamageDice { get; set; } = 0;
 }

@@ -69,6 +69,10 @@
                                StartIcon="@Icons.Material.Filled.Add"
                                Disabled="targets.Count >= MaxTargets"
                                OnClick="AddTarget">Add Target</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.ContentCopy"
+                               Disabled="targets.Count >= MaxTargets"
+                               OnClick="CopyTarget1">Copy @TargetLabel(0)</MudButton>
                     <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.RestartAlt"
                                OnClick="ResetTargets">Reset</MudButton>
@@ -440,6 +444,25 @@
         }
     }
 
+    private void CopyTarget1()
+    {
+        if (targets.Count < MaxTargets)
+        {
+            var src = targets[0];
+            targets.Add(new Target
+            {
+                Label          = src.Label,
+                Def            = src.Def,
+                Arm            = src.Arm,
+                Boxes          = src.Boxes,
+                IsPriority     = src.IsPriority,
+                ExtraAttackDice = src.ExtraAttackDice,
+                ExtraDamageDice = src.ExtraDamageDice,
+            });
+            Recalculate();
+        }
+    }
+
     private void RemoveTarget(int i)
     {
         if (targets.Count > 1)
@@ -499,11 +522,13 @@
 
             foreach (var t in targets)
             {
-                double hit      = HitProbability(attackDice, t.Def - rat);
-                double dmgPH    = ExpectedDamagePerHit(damageDice, pow - t.Arm);
+                int effectiveAtk = Math.Max(1, attackDice + t.ExtraAttackDice);
+                int effectiveDmg = Math.Max(1, damageDice + t.ExtraDamageDice);
+                double hit      = HitProbability(effectiveAtk, t.Def - rat);
+                double dmgPH    = ExpectedDamagePerHit(effectiveDmg, pow - t.Arm);
                 double expected = numAttacks * hit * dmgPH;
                 double allHit   = numAttacks * dmgPH;
-                double kill     = ChanceToKill(attackDice, damageDice, numAttacks, t.Def - rat, pow - t.Arm, t.Boxes);
+                double kill     = ChanceToKill(effectiveAtk, effectiveDmg, numAttacks, t.Def - rat, pow - t.Arm, t.Boxes);
 
                 perTarget.Add(new PerTargetStats(hit, expected, allHit, kill));
                 aggExpected += expected;
